@@ -1,0 +1,968 @@
+<!--**
+ * 原作者: Di (微信小程序开发工程师)
+ * organization: WeAppDev(微信小程序开发论坛)(http://weappdev.com)
+ *               垂直微信小程序开发交流社区
+ * github地址: https://github.com/icindy/ttParse
+ * 
+ * 2019年9月12日 00:21:37
+ * qupigege 改造为头条小程序富文本解析
+ * for: 头条、抖音小程序富文本解析
+ * detail : https://github.com/nqp1994/ttParse
+ */-->
+
+<!--基础元素-->
+<template name="ttParseVideo">
+  <!--增加video标签支持，并循环添加-->
+  <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+    <video class="{{item.classStr}} ttParse-{{item.tag}}-video" src="{{item.attr.src}}"></video>
+  </view>
+</template>
+
+<template name="ttParseImg">
+  <image class="{{item.classStr}} ttParse-{{item.tag}}" data-from="{{item.from}}" data-src="{{item.attr.src}}" data-idx="{{item.imgIndex}}" src="{{item.attr.src}}" mode="aspectFit" bindload="ttParseImgLoad" bindtap="ttParseImgTap" mode="widthFix" style="width:{{item.width}}px;"
+  />
+</template>
+
+<template name="ttEmojiView">
+  <view class="ttEmojiView ttParse-inline" style="{{item.styleStr}}">
+    <block tt:for="{{item.textArray}}" tt:key="">
+      <block class="{{item.text == '\\n' ? 'ttParse-hide':''}}" tt:if="{{item.node == 'text'}}">{{item.text}}</block>
+      <block tt:elif="{{item.node == 'element'}}">
+        <image class="ttEmoji" src="{{item.baseSrc}}{{item.text}}" />
+      </block>
+    </block>
+  </view>
+</template>
+
+<template name="ttParseBr">
+  <text>\n</text>
+</template>
+<!--入口模版-->
+
+<template name="ttParse">
+  <block tt:for="{{ttParseData}}" tt:key="">
+    <template is="ttParse0" data="{{item}}" />
+  </block>
+</template>
+
+
+<!--循环模版-->
+<template name="ttParse0">
+  <!--<template is="ttParse1" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse1" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse1" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse1" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+    <block tt:elif="{{item.tag == 'table'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse1" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse1" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse1" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+
+
+<!--循环模版-->
+<template name="ttParse1">
+  <!--<template is="ttParse2" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse2" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse2" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse2" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse2" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse2" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+
+<!--循环模版-->
+<template name="ttParse2">
+  <!--<template is="ttParse3" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse3" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse3" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse3" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse3" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse3" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse3">
+  <!--<template is="ttParse4" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse4" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse4" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse4" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse4" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse4" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse4">
+  <!--<template is="ttParse5" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse5" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse5" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse5" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse5" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse5" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse5">
+  <!--<template is="ttParse6" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse6" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse6" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse6" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse6" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse6" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse6">
+  <!--<template is="ttParse7" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse7" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse7" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse7" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse7" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse7" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+<!--循环模版-->
+<template name="ttParse7">
+  <!--<template is="ttParse8" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse8" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse8" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse8" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse8" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse8" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse8">
+  <!--<template is="ttParse9" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse9" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse9" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse9" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse9" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse9" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse9">
+  <!--<template is="ttParse10" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse10" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse10" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse10" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse10" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse10" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse10">
+  <!--<template is="ttParse11" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse11" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse11" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse11" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse11" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse11" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
+
+<!--循环模版-->
+<template name="ttParse11">
+  <!--<template is="ttParse12" data="{{item}}" />-->
+  <!--判断是否是标签节点-->
+  <block tt:if="{{item.node == 'element'}}">
+    <block tt:if="{{item.tag == 'button'}}">
+      <button type="default" size="mini">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse12" data="{{item}}" />
+        </block>
+      </button>
+    </block>
+    <!--li类型-->
+    <block tt:elif="{{item.tag == 'li'}}">
+      <view class="{{item.classStr}} ttParse-li" style="{{item.styleStr}}">
+        <view class="{{item.classStr}} ttParse-li-inner">
+          <view class="{{item.classStr}} ttParse-li-text">
+            <view class="{{item.classStr}} ttParse-li-circle"></view>
+          </view>
+          <view class="{{item.classStr}} ttParse-li-text">
+            <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+              <template is="ttParse12" data="{{item}}" />
+            </block>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!--video类型-->
+    <block tt:elif="{{item.tag == 'video'}}">
+      <template is="ttParseVideo" data="{{item}}" />
+    </block>
+
+    <!--img类型-->
+    <block tt:elif="{{item.tag == 'img'}}">
+      <template is="ttParseImg" data="{{item}}" />
+    </block>
+
+    <!--a类型-->
+    <block tt:elif="{{item.tag == 'a'}}">
+      <view bindtap="ttParseTagATap" class="ttParse-inline {{item.classStr}} ttParse-{{item.tag}}" data-src="{{item.attr.href}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse12" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <block tt:elif="{{item.tag == 'br'}}">
+      <template is="ttParseBr"></template>
+    </block>
+    <!--其他块级标签-->
+    <block tt:elif="{{item.tagType == 'block'}}">
+      <view class="{{item.classStr}} ttParse-{{item.tag}}" style="{{item.styleStr}}">
+        <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+          <template is="ttParse12" data="{{item}}" />
+        </block>
+      </view>
+    </block>
+
+    <!--内联标签-->
+    <view tt:else class="{{item.classStr}} ttParse-{{item.tag}} ttParse-{{item.tagType}}" style="{{item.styleStr}}">
+      <block tt:for="{{item.nodes}}" tt:for-item="item" tt:key="">
+        <template is="ttParse12" data="{{item}}" />
+      </block>
+    </view>
+
+  </block>
+
+  <!--判断是否是文本节点-->
+  <block tt:elif="{{item.node == 'text'}}">
+    <!--如果是，直接进行-->
+    <template is="ttEmojiView" data="{{item}}" />
+  </block>
+
+</template>
